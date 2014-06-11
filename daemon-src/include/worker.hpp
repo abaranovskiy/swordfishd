@@ -11,6 +11,7 @@
 #include <boost/enable_shared_from_this.hpp>
 //-------------------------------------------------------------------------------------------------
 #include "storage.hpp"
+#include "storage_controller.hpp"
 #include "command_tokenizer.hpp"
 //-------------------------------------------------------------------------------------------------
 namespace wapstart {
@@ -27,7 +28,7 @@ namespace wapstart {
      *
      */
     static pointer_type create(service_type &service,
-                               Storage      &storage);
+                               StorageController *&storage_controller);
     /**
      * @return the socket object, it used in accept operation 
      */
@@ -37,6 +38,8 @@ namespace wapstart {
      */
     void run();
 
+    void stop();
+
   private:
     Worker(const class_type &);
     void operator =(const class_type &);
@@ -44,7 +47,7 @@ namespace wapstart {
      *
      */
     Worker(service_type &service,
-           Storage      &storage);
+           StorageController *&storage_controller);
     /**
      * Reference to the base io_service object.
      */
@@ -52,7 +55,6 @@ namespace wapstart {
     /**
      * Reference to the storage object.
      */
-    Storage         &storage_;
     /**
      * Strand to ensure the connection's handlers are not called concurrently.
      */
@@ -65,6 +67,7 @@ namespace wapstart {
      *
      */
     array_type       buffer_;
+    StorageController *storage_controller_;
     /**
      *
      */

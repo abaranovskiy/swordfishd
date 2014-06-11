@@ -37,14 +37,56 @@ namespace wapstart {
     return tree_.get<port_type>("general.port", 9696);
   }
   //-----------------------------------------------------------------------------------------------
+  Config::port_type Config::additional_port() const 
+  {
+    return tree_.get<port_type>("general.additional_port", 9697);
+  }
+  //-----------------------------------------------------------------------------------------------
   size_t Config::workers() const
   {
     return tree_.get<size_t>("general.workers", 3);
   }
   //-----------------------------------------------------------------------------------------------
-  std::string Config::filler() const
+  std::vector<std::string> Config::storage_list() const
   {
-    return tree_.get<std::string>("general.filler");
+      std::vector<std::string> strs;
+      std::string a = tree_.get<std::string>("general.storage_list", "default");
+      boost::split(
+        strs,
+        a,
+        boost::is_any_of(";,")
+      );
+
+      return strs;
+  }
+
+    std::vector<std::string>  Config::storage_functions(const std::string& storage_id) const
+    {
+        std::vector<std::string> strs;
+        std::string a = tree_.get<std::string>("storage_" + storage_id + ".functions", "default");
+        boost::split(
+            strs,
+            a,
+            boost::is_any_of(";,")
+        );
+
+        return strs;
+    }
+
+    std::string Config::filler(const std::string& storage_id) const
+    {
+        return tree_.get<std::string>("storage_" + storage_id + ".filler");
+    }
+
+    bool Config::storage_default(const std::string& storage_id) const
+    {
+        return tree_.get<std::string>("storage_" + storage_id + ".default", "off") == "on";
+    }
+
+  //-----------------------------------------------------------------------------------------------
+  size_t Config::fillers(const std::string& storage_id) const
+  {
+    return tree_.get<size_t>("storage_" + storage_id + ".fillers", 10);
   }
   //-----------------------------------------------------------------------------------------------
   std::string Config::filler_function() const
@@ -52,29 +94,29 @@ namespace wapstart {
     return tree_.get<std::string>("general.filler_function", "get_values_from_outside");
   }
   //-----------------------------------------------------------------------------------------------
-  size_t Config::storage_size() const
+  size_t Config::storage_size(const std::string& storage_id) const
   {
-    return tree_.get<size_t>("general.storage_size", 1000);
+    return tree_.get<size_t>("storage_" + storage_id + ".storage_size", 1000);
   }
   //-----------------------------------------------------------------------------------------------
-  size_t Config::filler_queue_size() const
+  size_t Config::filler_queue_size(const std::string& storage_id) const
   {
-    return tree_.get<size_t>("general.filler_queue_size", 1048576 /* 1mb by default */);
+    return tree_.get<size_t>("storage_" + storage_id + ".filler_queue_size", 1048576 /* 1mb by default */);
   }  
   //-----------------------------------------------------------------------------------------------
-  size_t Config::max_fill_size() const
+  size_t Config::max_fill_size(const std::string& storage_id) const
   {
-    return tree_.get<size_t>("general.max_fill_size", 10 /* 10 by default */);
+    return tree_.get<size_t>("storage_" + storage_id + ".max_fill_size", 10 /* 10 by default */);
   }
   //-----------------------------------------------------------------------------------------------
-  size_t Config::storage_expirate_size() const
+  size_t Config::storage_expirate_size(const std::string& storage_id) const
   {
-    return tree_.get<size_t>("general.storage_expirate_size", storage_size() >> 3);
+    return tree_.get<size_t>("storage_" + storage_id + ".storage_expirate_size", storage_size(storage_id) >> 3);
   }
   //-----------------------------------------------------------------------------------------------
-  size_t Config::storage_ttl() const
+  size_t Config::storage_ttl(const std::string& storage_id) const
   {
-    return tree_.get<size_t>("general.storage_ttl", 10);
+    return tree_.get<size_t>("storage_" + storage_id + ".storage_ttl", 10);
   }
   //-----------------------------------------------------------------------------------------------
   Config::log_level_type Config::log_level() const 

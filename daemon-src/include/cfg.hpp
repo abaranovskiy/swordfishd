@@ -7,8 +7,10 @@
 #define __WAPSTART_SWORDFISH_CFG__H__
 //-------------------------------------------------------------------------------------------------
 #include <stdint.h>
+#include <vector>
 //-------------------------------------------------------------------------------------------------
 #include <boost/property_tree/ptree.hpp>
+#include <boost/algorithm/string.hpp>
 //-------------------------------------------------------------------------------------------------
 #include "log_level.hpp"
 #include "base_exception.hpp"
@@ -50,36 +52,54 @@ namespace wapstart {
     /**
      *
      */
+    port_type additional_port() const;
+    /**
+     *
+     */
     size_t workers() const;
     /**
      *
      */
-    std::string filler() const;
+    std::string filler(const std::string&) const;
     /**
      *
      */
     std::string filler_function() const;
+
+    std::vector<std::string> storage_list() const;
     /**
      * Storage size in bytes.
      */
-    size_t storage_size() const;
+    size_t storage_size(const std::string&) const;
     /**
     * Filler's queue size in bytes.
     */
-    size_t filler_queue_size() const;    
+    size_t filler_queue_size(const std::string&) const;
     /**
      * Size of fill queue
      */
-    size_t max_fill_size() const;
-    /**
-     *  
-     */
-    size_t storage_expirate_size() const;
+    size_t max_fill_size(const std::string&) const;
     /**
      *
      */
-    size_t storage_ttl() const;
-    /** 
+    size_t storage_expirate_size(const std::string&) const;
+    /**
+     *
+     */
+    std::vector<std::string>  storage_functions(const std::string&) const;
+    /**
+     *
+     */
+    bool storage_default(const std::string&) const;
+    /**
+     *
+     */
+    size_t storage_ttl(const std::string&) const;
+    /**
+     *
+     */
+    size_t fillers(const std::string&) const;
+    /**
      *
      */
     log_level_type log_level() const;

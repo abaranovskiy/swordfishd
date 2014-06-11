@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     display_usage();
     exit(0);
   }
-  
+
   using namespace boost::asio;
 
   try {
@@ -89,6 +89,9 @@ int main(int argc, char **argv)
     daemon.run(globalArgs.daemon);
   }
   catch(const std::exception &x) {
+
+      std::cout << x.what();
+
   }
   
   return 0;

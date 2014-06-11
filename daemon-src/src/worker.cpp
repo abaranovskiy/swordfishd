@@ -12,17 +12,17 @@
 //-------------------------------------------------------------------------------------------------
 namespace wapstart {
   Worker::Worker(service_type &service,
-                 Storage      &storage): service_(service), 
+                 StorageController *&storage_controller): service_(service),
                                          strand_(service),
-                                         storage_(storage),
-                                         socket_(service)
+                                         socket_(service),
+                                         storage_controller_(storage_controller)
   {
   }
   //-------------------------------------------------------------------------------------------------
   Worker::pointer_type Worker::create(service_type &service,
-                                      Storage      &storage)
+                                      StorageController *&storage_controller)
   {
-    return pointer_type(new Worker(service, storage));
+    return pointer_type(new Worker(service, storage_controller));
   }
   //-------------------------------------------------------------------------------------------------
   void Worker::run()
@@ -65,6 +65,11 @@ namespace wapstart {
     }
     shared_from_this().reset();*/
   }
+  void Worker::stop()
+  {
+      socket_.close();
+  }
+
   //-----------------------------------------------------------------------------------------------
   void Worker::on_read(const boost::system::error_code &error,
                        size_type                        bytes_transfered)
@@ -99,13 +104,15 @@ namespace wapstart {
 
           response.append("END\r\n");
         } else
-          storage_._do(command, response);
+            storage_controller_->processRequest(command, response);
 
         if(response.empty())
           response = "END\r\n";
-
-        boost::asio::write(socket_, boost::asio::buffer(response), boost::asio::transfer_all()); 
-
+        try {
+            boost::asio::write(socket_, boost::asio::buffer(response), boost::asio::transfer_all()); 
+        } catch (...) {
+            __LOG_INFO << "write failed";
+        }
         /*boost::asio::async_write(socket_, boost::asio::buffer(response), 
           strand_.wrap(boost::bind(&Worker::on_write, shared_from_this(),
                        boost::asio::placeholders::error)));*/

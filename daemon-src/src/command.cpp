@@ -27,6 +27,10 @@ namespace wapstart {
   {
     return args_.size() > 0 ? args_[0] : privacy::_unknown_command; 
   }
+  void Command::name(const std::string& name)
+  {
+      args_[0] = name;
+  }
   //-----------------------------------------------------------------------------------------------
   Command::size_type Command::argc() const
   {
@@ -52,6 +56,11 @@ namespace wapstart {
   {
     return args_.end();
   }
+  void Command::insert(const std::string& arg)
+  {
+      args_.push_back(arg);
+  }
+
   //-----------------------------------------------------------------------------------------------
 } // namespace wapstart
 //-------------------------------------------------------------------------------------------------

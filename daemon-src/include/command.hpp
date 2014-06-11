@@ -27,10 +27,12 @@ namespace wapstart {
      * Construct command objectt from input stream
      */
     Command(const std::string &cmd_line);
+    Command() {}
     /**
      * @return Name of the current command
      */ 
     const std::string &name() const;
+    void name(const std::string& name);
     /**
      * @return Number of command arguments 
      */
@@ -51,6 +53,8 @@ namespace wapstart {
      *
      */
     arg_iterator arg_end() const;
+
+    void insert(const std::string&);
 
   private:
     args_type   args_; /**< List of arguments */

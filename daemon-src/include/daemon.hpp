@@ -7,17 +7,26 @@
 #define __WAPSTART_SWORDFISH_DAEMON__H__
 //-------------------------------------------------------------------------------------------------
 #include <signal.h>
+#include <boost/ptr_container/ptr_list.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
+
 //-------------------------------------------------------------------------------------------------
 #include "server.hpp"
+#include "storage_controller.hpp"
 #include "cfg.hpp"
 #include "abstract_filler.hpp"
 //-------------------------------------------------------------------------------------------------
 namespace wapstart {
-  class Daemon {
-  public:
-    typedef Daemon                  class_type;
-    typedef int                     signal_type;
-    typedef boost::asio::io_service service_type;
+    typedef Storage* (*GetStorageFunction)(const std::string&);
+    class Daemon {
+    public:
+        typedef Daemon                  class_type;
+        typedef int                     signal_type;
+        typedef boost::asio::io_service service_type;
+        typedef boost::ptr_map<std::string, Storage*> storage_list_type;
+        typedef std::map<std::string, std::string> string_map;
+
+
     /**
      *
      */
@@ -42,22 +51,18 @@ namespace wapstart {
      *
      */
     bool done_;
+    storage_list_type storage_list_;
+    string_map storage_function_map_;
+    StorageController* storage_controller_;
     /**
      * Абстрагирует систему ввода/вывода.
      */
     service_type service_;
     /**
-     *
-     */
-    Storage *storage_;
-    /**
      *  
      */
-    AbstractFiller *filler_;
-    /**
-     *  
-     */
-    boost::thread *filler_thread_;
+    boost::ptr_list<AbstractFiller> fillers_;
+    boost::thread_group filler_threads_;
     /**
      *
      */
@@ -93,15 +98,53 @@ namespace wapstart {
     /**
      *
      */
+    void init();
+    /**
+     *
+     */
     void create_server();
     /**
-     *  
+     *
+     */
+    void create_storage();
+    /**
+     *
+     */
+    void recreate_fillers();
+    /**
+     *
+     */
+    void create_fillers(Storage*&, size_t, const std::string&);
+    /**
+     *
+     */
+    AbstractFiller* create_filler(Storage*&, const std::string&);
+    /**
+     *
      */
     void daemonize();
     /**
      *  
      */
     void reset_server();
+    /**
+     *
+     */
+    void reset_fillers();
+    /**
+     *
+     */
+    void reset_storage();
+    /**
+     *
+     */
+    void reload();
+    /**
+     *
+     */
+    void reset();
+
+
     /**
      *
      */
