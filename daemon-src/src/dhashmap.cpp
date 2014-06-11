@@ -93,6 +93,11 @@ namespace wapstart {
 
     return deleted_;
   }
+
+  void DHashmap::set_ttl(const DHashmap::ttl_type& ttl) {
+      ttl_ = ttl;
+  }
+
 //-------------------------------------------------------------------------------------------------
   bool DHashmap::get(const key_type& _key, val_type& val, key_type& normalized_key)
   {

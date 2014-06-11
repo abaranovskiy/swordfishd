@@ -1,7 +1,7 @@
 import os
 
 env = Environment()
-env['CCFLAGS'] = '-O2'
+env['CCFLAGS'] = '-fPIC -DBOOST_LOG_DYN_LINK -DNDEBUG -DBOOST_LOG_USE_NATIVE_SYSLOG -ftls-model=global-dynamic -fpic '
 AddOption('--extrapath',
           dest='extrapath',
           type='string',
@@ -23,7 +23,7 @@ add_extra_libs('/usr/local')
 
 env.Append(CPPPATH=['include'])
 
-boost_libs = ['program_options', 'system', 'thread', 'log']
+boost_libs = ['program_options', 'system', 'thread', 'log', 'regex']
 
 cfg = env.Configure()
 for lib in boost_libs:

@@ -18,6 +18,7 @@ namespace wapstart {
       token_.assign(remainder_->begin(), remainder_->begin() + offset_);
       offset_ += 2;
     }
+
     else remainder_ = NULL;
   }
   //-----------------------------------------------------------------------------------------------

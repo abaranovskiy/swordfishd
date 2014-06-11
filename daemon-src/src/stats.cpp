@@ -11,10 +11,10 @@ namespace wapstart {
 
   bool Stats::get(result_type& result)
   {
-    result = "";
+    //result = "";
     std::stringstream ss;
     read_scoped_lock lock(mutex_);
-      
+
     ss << "STAT " << "uptime "        << boost::date_time::second_clock<time_type>::local_time() - start_time_   << "\r\n";
     ss << "STAT " << "storage_size "  << storage_size_  << "\r\n";
     ss << "STAT " << "deleted "       << deleted_       << "\r\n";
@@ -23,16 +23,41 @@ namespace wapstart {
     ss << "STAT " << "queue_size "    << queue_size_    << "\r\n";
     ss << "STAT " << "values_size "   << values_size_   << "\r\n";
     ss << "END\r\n";
-    
-    result = ss.str();
-    
+
+    result.append(ss.str());
+
     //printf("[Stats::get] result: %s\n", result.c_str());
-    __LOG_DEBUG << "[Stats::get] uptime " << boost::date_time::second_clock<time_type>::local_time() - start_time_ 
-               << " storage size: " << storage_size_ << " deleted: " << deleted_ << " gets " << gets_ 
+    __LOG_DEBUG << "[Stats::get] uptime " << boost::date_time::second_clock<time_type>::local_time() - start_time_
+               << " storage size: " << storage_size_ << " deleted: " << deleted_ << " gets " << gets_
                << " updates: " << updates_ << " queue size: " << queue_size_
-               << " values: " << values_size_; 
+               << " values: " << values_size_;
     return true;
   }
+
+  bool Stats::get(const std::string& name, result_type& result)
+  {
+    //result = "";
+    std::stringstream ss;
+    read_scoped_lock lock(mutex_);
+
+    ss << "STAT " << name << ".uptime "        << boost::date_time::second_clock<time_type>::local_time() - start_time_   << "\r\n";
+    ss << "STAT " << name << ".storage_size "  << storage_size_  << "\r\n";
+    ss << "STAT " << name << ".deleted "       << deleted_       << "\r\n";
+    ss << "STAT " << name << ".gets_count "    << gets_          << "\r\n";
+    ss << "STAT " << name << ".updates_count " << updates_       << "\r\n";
+    ss << "STAT " << name << ".queue_size "    << queue_size_    << "\r\n";
+    ss << "STAT " << name << ".values_size "   << values_size_   << "\r\n";
+
+    result.append(ss.str());
+
+    //printf("[Stats::get] result: %s\n", result.c_str());
+    __LOG_DEBUG << "[Stats::get] uptime " << boost::date_time::second_clock<time_type>::local_time() - start_time_
+               << " storage size: " << storage_size_ << " deleted: " << deleted_ << " gets " << gets_
+               << " updates: " << updates_ << " queue size: " << queue_size_
+               << " values: " << values_size_;
+    return true;
+  }
+
 
 //-------------------------------------------------------------------------------------------------
   bool Stats::set_start_time()

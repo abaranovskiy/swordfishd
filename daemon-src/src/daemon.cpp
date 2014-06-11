@@ -25,16 +25,15 @@ namespace wapstart {
     cfg_(config_path), 
     done_(false), 
     server_(NULL),
-    storage_(NULL),
-    filler_(NULL),
-    filler_thread_(NULL)
+    storage_controller_(NULL)
   {
+      storage_controller_ = new StorageController();
     ugly::__this = this;
   }
   //-----------------------------------------------------------------------------------------------
   Daemon::~Daemon()
   {
-    reset_server();
+    reset();
     __LOG_INFO << "Goodbye!...";
   }
   //-----------------------------------------------------------------------------------------------
@@ -49,17 +48,20 @@ namespace wapstart {
       // Счетчик перезапусков
       std::size_t rn = 0;
 
+      create_storage();
+      create_server();
+
       while(!done_) {
         if(rn++) init_logger();
-        
-        create_server();
-      
+
+
         set_signal_handlers();
         
         __LOG_INFO << "I have started " << rn << " time...";
         __LOG_INFO << "I'm waiting for the events...";
       
         server_->run();
+        sleep(1);
 
         __LOG_INFO << "Event loop has stopped...";
       }
@@ -104,7 +106,7 @@ namespace wapstart {
     act.sa_sigaction = &signal_handler;
            
     act.sa_flags = SA_SIGINFO;
-               
+
     if (sigaction(SIGTERM, &act, NULL) < 0)
       throw std::runtime_error("Can't set sigaction for SIGTERM");
 
@@ -179,62 +181,145 @@ namespace wapstart {
     close(1);
     close(2);
   }
+
   //-----------------------------------------------------------------------------------------------
+  void Daemon::init()
+  {
+      create_storage();
+      create_server();
+  }
+
   void Daemon::create_server()
   {
-    reset_server();
-
-    __LOG_DEBUG << "I'm creating the storage...";
-    storage_ = new Storage(
-      cfg_.storage_ttl(),
-      cfg_.storage_size(),
-      cfg_.filler_queue_size(),
-      cfg_.storage_expirate_size()
-    );
-    storage_->Configure(cfg_.filler());
-
-    __LOG_DEBUG << "I'm creating the filler...";
-    filler_ = new AbstractFiller(storage_, cfg_.get_config());
-      
-    __LOG_DEBUG << "I'm configuring the filler...";
-    filler_->Configure(cfg_.filler(), cfg_.filler_function(), cfg_.max_fill_size());
-
-    __LOG_DEBUG << "I'm creating the filler thread...";
-    // Создаем поток наполнятора
-    filler_thread_ = new boost::thread(boost::ref(*filler_));
-    
     __LOG_DEBUG << "I'm creating the server...";
     // Конструируем новый сервер
-    server_ = new Server(service_, *storage_, cfg_.port(), cfg_.workers());
+    server_ = new Server(service_, storage_controller_, cfg_.port(), cfg_.additional_port(), cfg_.workers());
+    server_->reload();
+    //server_->configure();
   }
+
+    void Daemon::create_storage()
+    {
+        __LOG_DEBUG << "I'm creating the storage...";
+        std::vector<std::string> storage_names_ = cfg_.storage_list();
+        std::vector<std::string>::iterator i = storage_names_.begin();
+        while (i != storage_names_.end()) {
+            __LOG_DEBUG << "Create storage " << *i;
+            Storage* storage = new Storage(
+                cfg_.storage_ttl(*i),
+                cfg_.storage_size(*i),
+                cfg_.filler_queue_size(*i),
+                cfg_.storage_expirate_size(*i)
+            );
+            storage->Configure(cfg_.filler(*i));
+            storage_controller_->addStorage(*i, storage, cfg_.storage_functions(*i));
+
+            __LOG_DEBUG << "Starting " << cfg_.fillers(*i) << " for storage " << *i;
+            create_fillers(storage, cfg_.fillers(*i), *i);
+
+            // Fill function map
+            if (cfg_.storage_default(*i)) {
+                storage_function_map_["default"] = *i;
+            } else {
+                std::vector<std::string> functions = cfg_.storage_functions(*i);
+                std::vector<std::string>::iterator func = functions.begin();
+                while (func != functions.end()) {
+                    storage_function_map_[*func] = *i;
+                    func++;
+                }
+            }
+
+            i++;
+        }
+    }
+
+    void Daemon::recreate_fillers()
+    {
+        __LOG_DEBUG << "Recreate fillers";
+        reset_fillers();
+
+        std::vector<std::string> storage_names_ = cfg_.storage_list();
+        std::vector<std::string>::iterator i = storage_names_.begin();
+        while (i != storage_names_.end()) {
+            create_fillers(
+                storage_controller_->getStorage(*i),
+                cfg_.fillers(*i),
+                *i
+            );
+            i++;
+        }
+    }
+
+  void Daemon::create_fillers(Storage*& storage, size_t fillers_count, const std::string& storage_id)
+  {
+      __LOG_DEBUG << "Creating fillers (" << fillers_count << ") for storage " << storage_id;
+      for (int i = 0; i < fillers_count; i++) {
+          AbstractFiller* filler;
+          filler = create_filler(storage, storage_id);
+          // Создаем поток наполнятора
+          fillers_.push_back(filler);
+          filler_threads_.add_thread(new boost::thread(boost::ref(*filler)));
+          __LOG_DEBUG << "Filler #" << i << " for " << storage_id << " has been started.";
+      }
+  }
+
+  AbstractFiller* Daemon::create_filler(Storage*& storage, const std::string& storage_id)
+  {
+      AbstractFiller *filler;
+      __LOG_DEBUG << "I'm creating the filler...";
+      filler = new AbstractFiller(storage, cfg_.get_config());
+
+      filler->Configure(cfg_.filler(storage_id), cfg_.filler_function(), cfg_.max_fill_size(storage_id));
+
+      return filler;
+  }
+
   //-----------------------------------------------------------------------------------------------
+    void Daemon::reset()
+    {
+        reset_storage();
+        reset_fillers();
+        reset_server();
+
+    }
+
+    void Daemon::reload()
+    {
+        reset();
+        init();
+    }
+
   void Daemon::reset_server()
   {
-    if(filler_thread_) {
-      __LOG_DEBUG << "I'm stopping the filler thread...";
-      // Останавливаем поток наполнятора
-      filler_->Shutdown();
-      filler_thread_->join();
-      delete filler_thread_;
-    }
-    // Убиваем существующий сервер
-    // Все должно корректно остановиться в деструкторах
-    if(server_) {
-      __LOG_DEBUG << "I'm stopping the server...";
-      server_->stop();
-      delete server_;
-    }
+      __LOG_DEBUG << "Deleting server";
+      if (server_) {
+          service_.stop();
+          delete server_;
 
-    if(filler_) {
-      __LOG_DEBUG << "I'm deleting the filler...";
-      delete filler_;
-    }
-
-    if(storage_) {
-      __LOG_DEBUG << "I'm deleting the storage...";
-      delete storage_;
-    }
+      }
   }
+
+  void Daemon::reset_storage()
+  {
+      __LOG_DEBUG << "Reseting storage";
+      storage_list_.clear();
+  }
+
+  void Daemon::reset_fillers()
+  {
+      __LOG_INFO << "I'm deleting filler threads...";
+      boost::ptr_list<AbstractFiller>::iterator i = fillers_.begin();
+      while (i != fillers_.end()) {
+        __LOG_INFO << "Shutdown filler ... ";
+        i->Shutdown();
+        i++;
+      }
+      __LOG_INFO << "I'm deleting fillers...";
+      filler_threads_.join_all();
+      fillers_.clear();
+  }
+
+  //-----------------------------------------------------------------------------------------------
   //-----------------------------------------------------------------------------------------------
   void Daemon::on_exit()
   {
@@ -242,7 +327,8 @@ namespace wapstart {
     
     done_ = true;
     
-    server_->stop();
+
+    service_.stop();
   }
   //-----------------------------------------------------------------------------------------------
   void Daemon::on_config()
@@ -250,15 +336,32 @@ namespace wapstart {
     __LOG_INFO << "I'm restarting...";
     
     cfg_.reload();
-    
+
+    //
+    /*
+    storage_->set_defaults(
+        cfg_.storage_ttl(),
+        cfg_.storage_size(),
+        cfg_.filler_queue_size(),
+        cfg_.storage_expirate_size()
+    );
+*/
     server_->stop();
+    service_.stop();
+    reset_server();
+    recreate_fillers();
+    create_server();
+
   }
   //-----------------------------------------------------------------------------------------------
   void Daemon::on_expirate()
   {
     __LOG_INFO << "I'm expirating the storage...";
     
-    storage_->expirate();
+    storage_list_type::iterator iter = storage_list_.begin();
+    while (iter != storage_list_.end())
+        (*iter->second)->expirate();
+
   }
   //-----------------------------------------------------------------------------------------------
   void Daemon::on_segfault()
@@ -287,4 +390,3 @@ namespace wapstart {
   //-----------------------------------------------------------------------------------------------
 } // namespace wapstart
 //-------------------------------------------------------------------------------------------------
-
