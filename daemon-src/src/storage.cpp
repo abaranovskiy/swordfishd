@@ -15,18 +15,7 @@ namespace wapstart {
       max_queue_size_(max_queue_size),
       expirate_size_(expirate_size)
   {
-      stats_ = new Stats();
   }
-
-  void Storage::set_defaults(size_t ttl, size_t max_storage_size, size_t max_queue_size, size_t expirate_size)
-  {
-      __LOG_DEBUG << "Reconfiguring storage";
-      max_storage_size_ = max_storage_size;
-      max_queue_size_ = max_queue_size;
-      expirate_size_ = expirate_size;
-      storage_.set_ttl(storage_type::ttl_type(boost::posix_time::seconds(ttl)));
-  }
-
   //-----------------------------------------------------------------------------------------------
   void Storage::_do(const cmd_type  &command, result_type& result) 
   {
@@ -49,7 +38,6 @@ namespace wapstart {
 
   void Storage::add_item(const key_type& key, const val_type& val)
   {
-    boost::mutex::scoped_lock lock(mutex_);
     while (storage_.get_storage_size() >= max_storage_size_)
     {
       expirate();
@@ -62,12 +50,12 @@ namespace wapstart {
   void Storage::reset_stats()
   {
     __LOG_DEBUG << "[Storage::reset_stats]";
-    stats_->set_start_time();
-    stats_->set_storage_size(storage_.get_storage_size());
-    stats_->set_deleted(0);
-    stats_->set_queue_size(queue_.size());
-    stats_->set_gets(0);
-    stats_->set_values_size(storage_.get_values_size());
+    stats_.set_start_time();
+    stats_.set_storage_size(storage_.get_storage_size());
+    stats_.set_deleted(0);
+    stats_.set_queue_size(queue_.size());
+    stats_.set_gets(0);
+    stats_.set_values_size(storage_.get_values_size());   
   }
 //-------------------------------------------------------------------------------------------------
 
@@ -86,7 +74,7 @@ namespace wapstart {
   void Storage::push_key(const key_type& key)
   {
     if (queue_.size() < max_queue_size_)
-      stats_->set_queue_size(queue_.push(key));
+      stats_.set_queue_size(queue_.push(key));
     else
       __LOG_NOTICE << "[Storage::push_key] queue is full";
   }
@@ -101,25 +89,19 @@ namespace wapstart {
   void Storage::refresh_stats()
   {
     __LOG_DEBUG << "[Storage::refresh_stats]"; 
-    stats_->set_storage_size(storage_.get_storage_size());
-    stats_->set_deleted(storage_.get_deleted());
-    stats_->set_queue_size(queue_.size());
-    stats_->set_gets(storage_.get_gets());
-    stats_->set_values_size(storage_.get_values_size());
-    stats_->set_updates(storage_.get_updates());
+    stats_.set_storage_size(storage_.get_storage_size());
+    stats_.set_deleted(storage_.get_deleted());
+    stats_.set_queue_size(queue_.size());
+    stats_.set_gets(storage_.get_gets());  
+    stats_.set_values_size(storage_.get_values_size());
+    stats_.set_updates(storage_.get_updates());
   }
 //-------------------------------------------------------------------------------------------------
 
   void Storage::get_stats(result_type& res)
   {
     refresh_stats();
-    stats_->get(res);
-  }
-
-  void Storage::get_stats(const std::string& name, result_type& res)
-  {
-    refresh_stats();
-    stats_->get(name, res);
+    stats_.get(res);  
   }
 //-------------------------------------------------------------------------------------------------
 

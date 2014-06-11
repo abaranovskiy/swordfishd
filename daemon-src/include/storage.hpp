@@ -20,7 +20,6 @@ namespace wapstart {
   public:
     typedef Storage class_type;
     typedef boost::posix_time::ptime time_type;
-    typedef boost::/*interprocess::interprocess_upgradable_*/mutex mutex_type;
     typedef std::string arg_type;
     typedef std::string result_type;
     typedef std::string key_type;
@@ -37,7 +36,6 @@ namespace wapstart {
     /**
      *
      */
-    void set_defaults(size_t ttl, size_t max_storage_size, size_t max_queue_size, size_t expirate_size);
     void _do(const cmd_type& command, result_type& result);
     void add_item(const key_type& key, const val_type& val);
     void reset_stats();
@@ -47,11 +45,10 @@ namespace wapstart {
     void res_append(const arg_type& arg, const val_type& value, result_type& res);
     
     size_t queue_size();
-    size_t max_storage_size() {return max_storage_size_;}
-    size_t storage_size() {return storage_.get_storage_size();}
+    size_t max_storage_size() {return max_storage_size_;}; 
+    size_t storage_size() {return storage_.get_storage_size();};
   
-      void get_stats(const std::string&, result_type& res);
-      bool   Configure(const std::string &lib_path) {return storage_.configure_func(lib_path);}
+    bool   Configure(const std::string &lib_path) {return storage_.configure_func(lib_path);};
   private:
     
     Storage(const class_type &);
@@ -61,10 +58,10 @@ namespace wapstart {
     void get_stats(result_type& res);
     bool get_val(const Command& cmd, result_type& res);
 
-    mutex_type mutex_;
+
     storage_type storage_;
     queue_type   queue_;
-    stats_type   *stats_;
+    stats_type   stats_;
     size_t max_storage_size_; // in bytes
     size_t max_queue_size_; // in bytes
     size_t       expirate_size_;

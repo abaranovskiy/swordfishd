@@ -17,14 +17,13 @@ namespace wapstart {
   void AbstractFiller::Shutdown()
   {
     __LOG_DEBUG << "I'm stopping filler thread...";
-    storage_lock readerlock(mutex_);	
+
     boost::mutex::scoped_lock lock(state_mutex_);
     is_alive_ = false; 
   }
 //-------------------------------------------------------------------------------------------------
   AbstractFiller::~AbstractFiller()
   { 
-      __LOG_DEBUG << "Closing library handler...";
     dlclose(lib_handle_);
   }
 //-------------------------------------------------------------------------------------------------
@@ -56,14 +55,10 @@ namespace wapstart {
       __LOG_CRIT << "[AbstractFiller::Configure] Cannot load filler func. " << error;
       exit(1);
     }
-    __LOG_INFO << "Filler function loaded";
+    __LOG_DEBUG << "Filler function loaded";
     max_fill_size_ = max_fill_size ? max_fill_size : 10;
     configured_ = true;
-    __LOG_DEBUG << "Library loaded";
-    return configured_;
   }
-
-
 //-------------------------------------------------------------------------------------------------
   void AbstractFiller::operator()()
   {
@@ -81,7 +76,6 @@ namespace wapstart {
       if (k - storage_->storage_size() == 0)
         storage_->expirate();
       size_t t = max_fill_size_;
-	storage_lock *lock = new storage_lock(mutex_);
       while(t-- && is_alive() && storage_->queue_size() != 0  && k - storage_->storage_size()  > 0)
       {
         key = "";
@@ -89,8 +83,7 @@ namespace wapstart {
         if (!key.empty())
           keys.push_back(key);
       }
-      delete lock;
-
+      
       if (keys.size() > 0 && (!is_filler_alive || is_filler_alive(config_)))
       {
         get_vals(keys, vals, config_);

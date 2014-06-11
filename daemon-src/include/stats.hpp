@@ -28,7 +28,6 @@ namespace wapstart {
      *
      */
     bool get(result_type& result);
-    bool get(const std::string&, result_type&);
     bool set_start_time();
     bool set_storage_size(uint size);
     bool set_deleted(uint count); // deleted_ += count

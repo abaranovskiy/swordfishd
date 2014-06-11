@@ -1,7 +1,7 @@
 import os
 
 env = Environment()
-env['CCFLAGS'] = '-fpic -O3 -DBOOST_LOG_DYN_LINK -DNDEBUG '
+env['CCFLAGS'] = '-O2'
 AddOption('--extrapath',
           dest='extrapath',
           type='string',
@@ -23,13 +23,11 @@ add_extra_libs('/usr/local')
 
 env.Append(CPPPATH=['include'])
 
-boost_libs = ['program_options', 'system', 'thread', 'log', 'log_setup', "regex"]
-
-multithread = int(ARGUMENTS.get('mt', 0))
+boost_libs = ['program_options', 'system', 'thread', 'log']
 
 cfg = env.Configure()
 for lib in boost_libs:
-  if not cfg.CheckLib("boost_%s" % lib + ('-mt' if multithread else '')):
+  if not cfg.CheckLib("boost_%s" % lib):
     print "scons: %s boost library not found" % lib
     Exit(-1)
 

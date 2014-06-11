@@ -156,7 +156,7 @@ namespace wapstart {
     uint expirate(size_t expirate_size); // deleted += uint
     bool get(const key_type&, val_type&, key_type& normalized_key); // ++gets_
     bool add(const key_type&, const val_type&);
-    void set_ttl(const ttl_type&);
+
     /**
      * for stats
      */ 

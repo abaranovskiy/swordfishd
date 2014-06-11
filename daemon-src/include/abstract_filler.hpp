@@ -10,8 +10,6 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/function.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <boost/interprocess/sync/interprocess_upgradable_mutex.hpp>
-
 //-------------------------------------------------------------------------------------------------
 namespace wapstart {
 
@@ -23,7 +21,6 @@ namespace wapstart {
     typedef AbstractFiller              class_type;
     typedef Storage                     storage_type;
     typedef boost::mutex                mutex_type;
-    typedef boost::interprocess::interprocess_upgradable_mutex mutex_type_;
 
     typedef bool (*get_vals_type)(
         const std::vector<std::string>&,
@@ -67,29 +64,10 @@ namespace wapstart {
   
     storage_type       *storage_;
     mutex_type          state_mutex_;
-    mutex_type_          mutex_;
     bool                is_alive_;
     bool                configured_;
     void               *lib_handle_;
     size_t              max_fill_size_;
-
-    class storage_lock
-    {
-      private:
-        mutex_type_& rwlock;
-      public:
-        storage_lock(mutex_type_& lock)
-          :rwlock(lock)
-        {
-          rwlock.lock_upgradable();
-          //printf("writer locked\n");
-        }
-        ~storage_lock()
-        {
-          rwlock.unlock_upgradable();
-          //printf("writer unlocked\n");
-        }
-    };
 
     boost::property_tree::ptree *config_;
   };
