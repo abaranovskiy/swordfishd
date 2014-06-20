@@ -91,6 +91,6 @@ namespace wapstart {
             getStorage(j->first)->_do(j->second, result);
             j++;
         }
-
+    	result.append("END\r\n");
     }
 }

@@ -125,7 +125,6 @@ namespace wapstart {
 
   bool Storage::get_val(const Command& cmd, result_type& res)
   {
-    res = "";
     key_type normalized_key;
     for(Command::arg_iterator x = cmd.arg_begin(); x != cmd.arg_end(); ++x) {
       std::string value;
@@ -137,7 +136,6 @@ namespace wapstart {
       if (!result)
        push_key(normalized_key); 
     }
-    res += "END\r\n";
     //printf("res: %s", res.c_str());
     return true;
   }
