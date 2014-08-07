@@ -193,7 +193,7 @@ namespace wapstart {
   {
     __LOG_DEBUG << "I'm creating the server...";
     // Конструируем новый сервер
-    server_ = new Server(service_, storage_controller_, cfg_.port(), cfg_.additional_port(), cfg_.workers());
+    server_ = new Server(service_, storage_controller_, cfg_.port(), cfg_.workers());
     server_->reload();
     //server_->configure();
   }
@@ -337,8 +337,22 @@ namespace wapstart {
     
     cfg_.reload();
 
-    //
-    /*
+    // FIXME: Need to reconfigure storages in StorageController
+    std::vector<std::string> storage_names_ = cfg_.storage_list();
+    std::vector<std::string>::iterator i = storage_names_.begin();
+    while (i != storage_names_.end()) {
+        storage_controller_->
+                getStorage(*i)->
+                set_defaults(
+                    cfg_.storage_ttl(*i),
+                    cfg_.storage_size(*i),
+                    cfg_.filler_queue_size(*i),
+                    cfg_.storage_expirate_size(*i)
+                );
+
+        i++;
+    }
+/*
     storage_->set_defaults(
         cfg_.storage_ttl(),
         cfg_.storage_size(),

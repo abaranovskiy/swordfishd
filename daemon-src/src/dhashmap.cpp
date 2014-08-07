@@ -6,6 +6,7 @@
 #include "dhashmap.hpp"
 #include "logger.hpp"
 #include "filler.h"
+#include "timer.hpp"
 
 #include <dlfcn.h>
 //-------------------------------------------------------------------------------------------------
@@ -19,7 +20,7 @@ namespace wapstart {
     : ttl_(ttl), deleted_(0), gets_(0), updates_(0),
       lib_handle_(0), configured_(false), storage_size(0)
   {
-    
+
   }
 //-------------------------------------------------------------------------------------------------
   bool DHashmap::configure_func(const std::string& libpath)
@@ -66,10 +67,10 @@ namespace wapstart {
 
     while ((it != end_it) && (deleted_bytes < expirate_size))
     {
-        deleted_bytes += it->key_.length();
+        deleted_bytes += it->key_.size();
 
         if (it->value_.use_count() == 1)
-               deleted_bytes += it->value_->length();
+               deleted_bytes += it->value_->size();
 
         keys_.get<hashmap_ttl_tag>().erase(it);
         ++deleted_;
@@ -101,10 +102,13 @@ namespace wapstart {
 //-------------------------------------------------------------------------------------------------
   bool DHashmap::get(const key_type& _key, val_type& val, key_type& normalized_key)
   {
+      Timer timer("[DHashmap::get] get result for key " + _key);
     key_type key;
-    if (__normalize_key__)
+    if (__normalize_key__) {
+        Timer timer("Normalize key");
       __normalize_key__(_key, key);
-    else
+      timer.show();
+    } else
       key = _key;
     
     normalized_key = key;
@@ -113,10 +117,17 @@ namespace wapstart {
       write_scoped_lock lock(mutex_);
       ++gets_;
     }
+    if (key.empty())
+    {
+        __LOG_CRIT << "[DHashmap::get] failed to normalize key " << _key << "  " << val;
+        return false;
+    }
+
     read_scoped_lock lock(mutex_);
 
     hashmap_set_by_key::iterator it = keys_.get<hashmap_key_tag>().find(key);
     hashmap_set_by_key::iterator end_it = keys_.get<hashmap_key_tag>().end();
+    bool result = false;
 
     if (it != end_it)
     {
@@ -138,7 +149,7 @@ namespace wapstart {
         __LOG_DEBUG << "[DHashmap::get] key " << key << " value " << val;
         __LOG_DEBUG << "[DHashmap::get] refresh ttl key " << key << " value " << val;
 
-        return true;
+        result = true;
       } else {
         __LOG_DEBUG << "[DHashmap::get] key " << key << " value " << val;
         __LOG_DEBUG << "[DHashmap::get] update key " << key;
@@ -148,12 +159,14 @@ namespace wapstart {
           ++updates_;
         }
 
-        return false;
+        result = false;
       }
+    } else {
+        __LOG_DEBUG << "[DHashmap::get] missing get key " << key;
     }
-    __LOG_DEBUG << "[DHashmap::get] missing get key " << key;
 
-    return false;
+    timer.show();
+    return result;
   }
 //-------------------------------------------------------------------------------------------------
 
@@ -178,7 +191,7 @@ namespace wapstart {
         if (it != end_it) {
            if (it->value_ != found) {
              if (it->value_.use_count() == 1) {
-               dec_storage_size(it->value_->length());
+               dec_storage_size(it->value_->size());
                values_.erase(it->value_);
              }
 
@@ -191,7 +204,7 @@ namespace wapstart {
            }
         } else {
           keys_.insert(key_type_struct(key, found));
-          inc_storage_size(key.length());
+          inc_storage_size(key.size());
 
           __LOG_DEBUG << "[DHashmap::add] Added key for exists value";
         }
@@ -199,7 +212,7 @@ namespace wapstart {
       else
       {
         //delete from set
-        dec_storage_size(found->length());
+        dec_storage_size(found->size());
         values_.erase(found);
 
         __LOG_DEBUG << "[DHashmap::add] Delete value from set";
@@ -216,14 +229,14 @@ namespace wapstart {
         __LOG_DEBUG << "[DHashmap::add] Update value and ttl for key " << key;
         it->update_ttl();
         values_.insert(new_item);
-        inc_storage_size(new_item->length());
+        inc_storage_size(new_item->size());
       }
       else
       {
         // иначе надо создать строку в куче, добавить ее в множество, затем в мап
         values_.insert(new_item);
         keys_.insert(key_type_struct(key, new_item));
-        inc_storage_size(new_item->length() + key.length());
+        inc_storage_size(new_item->size() + key.size());
         __LOG_DEBUG << "[DHashmap::add] Add new key-value pair";
       }
     }

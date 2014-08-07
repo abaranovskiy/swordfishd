@@ -11,6 +11,18 @@
 //-------------------------------------------------------------------------------------------------
 #define __CAST_NAME_TO_LEVEL(X, SHORT_NAME, LONG_NAME) \
   if(X == #SHORT_NAME || X == #LONG_NAME) return SHORT_NAME; 
+// timings
+
+#define __INIT_TIMER \
+
+
+#define __START_TIMER \
+    boost::posix_time::ptime startTime = boost::posix_time::microsec_clock::local_time();
+
+#define __STOP_TIMER (X) \
+    __LOG_DEEP_DEBUG    \
+            << ##X## \
+            << boost::posix_time::microsec_clock::local_time() - startTime;
 //-------------------------------------------------------------------------------------------------
 namespace wapstart {
   struct LogLevel {
@@ -22,7 +34,8 @@ namespace wapstart {
       WARN,
       NOTICE,
       INFO,
-      DEBUG
+      DEBUG,
+      DEEP_DEBUG
     };
     /**
      *
@@ -34,6 +47,7 @@ namespace wapstart {
       __CAST_NAME_TO_LEVEL(text, ERROR, ERROR)
       __CAST_NAME_TO_LEVEL(text, WARN, WARNING)
       __CAST_NAME_TO_LEVEL(text, NOTICE, NOTICE)
+      __CAST_NAME_TO_LEVEL(text, DEEP_DEBUG, DEEP_DEBUG)
       __CAST_NAME_TO_LEVEL(text, INFO, INFORMATIONAL)
       return DEBUG;
     }
@@ -62,6 +76,8 @@ namespace wapstart {
       strm << "INFO  "; break;
     case LogLevel::DEBUG:
       strm << "DEBUG "; break;
+    case LogLevel::DEEP_DEBUG:
+      strm << "DDEBUG"; break;
     default:
       strm << static_cast< int >(lvl); break;
     }

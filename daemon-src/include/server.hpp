@@ -37,7 +37,6 @@ namespace wapstart {
     Server(service_type &service,
            StorageController*&,
            port_type     port,
-           port_type     additional_port,
            size_type     workers = 10); 
     /**
      *  
@@ -58,9 +57,7 @@ namespace wapstart {
     service_type        &service_;
     StorageController*  storage_controller_;
     acceptor_type        acceptor_;    
-    acceptor_type        additional_acceptor_;
     size_type            workers_;
-    Worker::pointer_type worker2_;
     Worker::pointer_type worker_;
     /**
      *

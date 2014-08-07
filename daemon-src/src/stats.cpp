@@ -46,6 +46,7 @@ namespace wapstart {
     ss << "STAT " << name << ".gets_count "    << gets_          << "\r\n";
     ss << "STAT " << name << ".updates_count " << updates_       << "\r\n";
     ss << "STAT " << name << ".queue_size "    << queue_size_    << "\r\n";
+    ss << "STAT " << name << ".keys_size "     << keys_size_     << "\r\n";
     ss << "STAT " << name << ".values_size "   << values_size_   << "\r\n";
 
     result.append(ss.str());
@@ -72,12 +73,18 @@ namespace wapstart {
     write_scoped_lock lock(mutex_); 
     storage_size_ = size; 
   }
-//-------------------------------------------------------------------------------------------------
-  bool Stats::set_values_size(uint size)
-  {
-    write_scoped_lock lock(mutex_);
-    values_size_ = size; 
-  }
+  //-------------------------------------------------------------------------------------------------
+    bool Stats::set_values_size(uint size)
+    {
+      write_scoped_lock lock(mutex_);
+      values_size_ = size;
+    }
+    //-------------------------------------------------------------------------------------------------
+      bool Stats::set_keys_size(uint size)
+      {
+        write_scoped_lock lock(mutex_);
+        keys_size_ = size;
+      }
 //-------------------------------------------------------------------------------------------------
   bool Stats::set_deleted(uint count)
   {

@@ -1,7 +1,7 @@
 import os
 
 env = Environment()
-env['CCFLAGS'] = '-fPIC -DBOOST_LOG_DYN_LINK -DNDEBUG -DBOOST_LOG_USE_NATIVE_SYSLOG -ftls-model=global-dynamic -fpic '
+env['CCFLAGS'] = '-fPIC -O3 -DBOOST_LOG_DYN_LINK -DNDEBUG -DBOOST_LOG_USE_NATIVE_SYSLOG -ftls-model=global-dynamic -fpic '
 AddOption('--extrapath',
           dest='extrapath',
           type='string',

@@ -9,7 +9,7 @@
 #include "logger.hpp"
 #include "abstract_filler.hpp"
 #include <dlfcn.h>
-
+#include <ctime>
 //-------------------------------------------------------------------------------------------------
 
 namespace wapstart {
@@ -63,7 +63,7 @@ namespace wapstart {
 //-------------------------------------------------------------------------------------------------
   void AbstractFiller::operator()()
   {
-    if(!configured_) 
+    if(!configured_)
     {
       __LOG_CRIT << "[AbstractFiller::operator()()] filler not configured";
       exit(1);
@@ -73,11 +73,13 @@ namespace wapstart {
     size_t k;
     while(is_alive())
     {
+
       k = storage_->max_storage_size();
       if (k - storage_->storage_size() == 0)
         storage_->expirate();
       size_t t = max_fill_size_;
-	storage_lock *lock = new storage_lock(mutex_);
+      clock_t tStart2 = clock();
+  //      storage_lock *lock = new storage_lock(mutex_);
       while(t-- && is_alive() && storage_->queue_size() != 0  && k - storage_->storage_size()  > 0)
       {
         key = "";
@@ -85,28 +87,33 @@ namespace wapstart {
         if (!key.empty())
           keys.push_back(key);
       }
-      delete lock;
-
+//      printf("Execution Time 2: %.2fs\n", (double)(clock() - tStart2)/CLOCKS_PER_SEC);
+  //    delete lock;
       if (keys.size() > 0 && (!is_filler_alive || is_filler_alive(config_)))
       {
         get_vals(keys, vals, config_);
         std::vector<std::string>::iterator key_it, val_it;
         key_it = keys.begin();
         val_it = vals.begin();
+
         while(key_it != keys.end() && val_it != vals.end())
         {
           storage_->add_item(*key_it++, *val_it++);
         }
         keys.clear();
       }
-      else sleep(1);
+      else  {
+
+          sleep(1);
+      }
+
     }
     __LOG_DEBUG << "Filler stopped";
   }
 
   bool AbstractFiller::is_alive()
   {
-    boost::mutex::scoped_lock lock(state_mutex_);
+    //boost::mutex::scoped_lock lock(state_mutex_);
     return is_alive_;  
   }
 } // namespace wapstart

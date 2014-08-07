@@ -1,5 +1,9 @@
+#include <boost/algorithm/string/split.hpp>
+
 #include "storage_controller.hpp"
 #include "storage.hpp"
+#include "timer.hpp"
+
 
 namespace wapstart {
 
@@ -44,6 +48,7 @@ namespace wapstart {
 
     void StorageController::processRequest(const cmd_type& cmd, Storage::result_type& result)
     {
+
         if (cmd.name() == "stats") {
             storage_list_type::iterator storageIter = storages_.begin();
             while(storageIter != storages_.end()) {
@@ -55,26 +60,29 @@ namespace wapstart {
             return;
         }
 
+        Timer timer("[StorageController::processRequest]: preprocess commands");
         string_list key_map;
-
         for(Command::arg_iterator x = cmd.arg_begin(); x != cmd.arg_end(); ++x) {
-          regex_map_type::iterator regexIter = regex_map.begin();
-          while (regexIter != regex_map.end()) {
-              if (boost::regex_search(*x, boost::regex(regexIter->first)))
-              {
-                  key_map[*x] = regexIter->second;
-                  break;
-              }
-              regexIter ++;
-          }
-          if (regexIter == regex_map.end())
-          {
+            std::string command;
+            std::string::const_iterator i;
 
-              key_map[*x] = "default";
-          }
-          __LOG_DEBUG << "storage for: " << *x << " - " << key_map[*x];
+            for (i = (*x).begin(); i != (*x).end() && (*i) != ':'; i++) {
+                command += (*i);
+            }
+
+            string_list::iterator funcMapIterator = function_map_.find(command);
+
+            if (funcMapIterator == function_map_.end()  ) {
+                key_map[*x] = "default";
+            } else {
+                key_map[*x] = funcMapIterator->second;
+            }
+
+           __LOG_DEBUG << "storage for: " << *x << " - " << key_map[*x];
         }
+        timer.show();
 
+        Timer searchStorageTimer("Search storage for command");
         string_list::iterator i = key_map.begin();
         std::map<std::string, Command> command_list;
         while (i != key_map.end()) {
@@ -86,11 +94,57 @@ namespace wapstart {
             command_list.at(i->second).insert(i->first);
             i++;
         }
+        searchStorageTimer.show();
+
         std::map<std::string, Command>::iterator j = command_list.begin();
         while (j != command_list.end()) {
+            Timer storageTimer("Storage " + j->first + " processed request");
             getStorage(j->first)->_do(j->second, result);
+            storageTimer.show();
             j++;
         }
+
     	result.append("END\r\n");
     }
 }
+
+
+//boost::split(splitted_command, *x, boost::is_any_of(":"));
+
+
+
+/*pos = (*x).find(":");
+std::string command = (*x).substr(0, pos - 1);
+
+if (pos == std::string::npos) {
+    key_map[*x] = "default";
+} else {
+    std::string command = std::string( pivot + key.size(), original.end() );
+
+    string_list::iterator funcMapIterator = function_map_.find(command);
+
+    if (funcMapIterator == function_map_.end()  ) {
+        key_map[*x] = "default";
+    } else {
+        key_map[*x] = funcMapIterator->second;
+    }
+    __LOG_CRIT  << command;
+}
+*/
+/*
+regex_map_type::iterator regexIter = regex_map.begin();
+while (regexIter != regex_map.end()) {
+    if (boost::regex_search(*x, boost::regex(regexIter->first)))
+    {
+        key_map[*x] = regexIter->second;
+        break;
+    }
+    regexIter ++;
+}
+
+if (regexIter == regex_map.end())
+{
+
+    key_map[*x] = "default";
+}*/
+//std::vector<std::string> splitted_command;

@@ -66,6 +66,7 @@ namespace wapstart {
 #define __LOG_NOTICE __LOG(wapstart::LogLevel::NOTICE)
 #define __LOG_INFO   __LOG(wapstart::LogLevel::INFO)
 #define __LOG_DEBUG  __LOG(wapstart::LogLevel::DEBUG)
+#define __LOG_DEEP_DEBUG  __LOG(wapstart::LogLevel::DEEP_DEBUG)
 //-------------------------------------------------------------------------------------------------
 } // namespace wapstart
 //-------------------------------------------------------------------------------------------------

@@ -61,7 +61,7 @@ namespace wapstart {
       {
         map_item_type pox = x.lock();
         map_item_type poy = y.lock();
-        if (pox && poy) 
+        if (pox && poy)
         {     
           return (*pox == *poy);
         } 
@@ -162,7 +162,7 @@ namespace wapstart {
      */ 
     uint get_storage_size();
     uint get_keys_size();
-    uint get_values_size(); 
+    uint get_values_size();
     uint get_deleted(); // set deleted_ = 0
     uint get_gets();    // set gets_    = 0
     uint get_updates(); // set updates_ = 0

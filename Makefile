@@ -1,7 +1,7 @@
 all: swordfish testfiller
 
 swordfish: 
-	scons -C daemon-src/
+	scons -C daemon-src/ --max-drift=1 --implicit-deps-unchanged -j4
 
 testfiller:
 	cd daemon-src/misc/fill_func && g++ -c -fPIC filler.cpp -o filler.o && g++ -shared  -o libfiller.so filler.o && cd -
